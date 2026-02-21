@@ -1,9 +1,563 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>Pokemon Snake</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>宝可梦贪食蛇 | Pokemon Snake</title>
+    <meta name="description" content="宝可梦主题的贪食蛇游戏 - 皮卡丘蛇头 + 精灵球食物">
+    <meta name="theme-color" content="#FFCB05">
+    <link rel="manifest" href="data:application/json,{\"name\":\"Pokemon Snake\",\"short_name\":\"Pokemon Snake\",\"start_url\":\".\",\"display\":\"standalone\",\"background_color\":\"#ffffff\",\"theme_color\":\"#FFCB05\",\"icons\":[{\"src\":\"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22192%22 height=%22192%22 viewBox=%220 0 192 192%22><rect width=%22192%22 height=%22192%22 fill=%22%23FFCB05%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2248%22 fill=%22%23FF0000%22>⚡</text></svg>\",\"sizes\":\"192x192\",\"type\":\"image/svg+xml\"}]}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            touch-action: none;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 90vmin;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 3px solid #FFCB05;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 10;
+            padding: 20px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        h1 {
+            color: #FF0000;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .score {
+            font-size: 1.5em;
+            color: #333;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FFCB05, #FF6B6B);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            border: 2px solid #FF0000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .control-btn {
+            background: rgba(255, 203, 5, 0.8);
+            border: 2px solid #FF6B6B;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FF0000;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 203, 5, 1);
+            transform: scale(1.1);
+        }
+        
+        .up { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 3; }
+        
+        .game-over {
+            color: #FF0000;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-align: center;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            border: 1px solid #FFCB05;
+        }
+        
+        .pikachu-icon {
+            font-size: 2em;
+            margin: 10px 0;
+            color: #FFCB05;
+        }
+        
+        @media (max-width: 500px) {
+            h1 { font-size: 2em; }
+            .btn { padding: 12px 24px; font-size: 1em; }
+            .controls { width: 150px; height: 150px; }
+            .subtitle { font-size: 1em; }
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 203, 5, 0.3);
+            border-radius: 50%;
+            border-top-color: #FFCB05;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <h1>Coming Soon!</h1>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="startScreen" class="ui-overlay">
+            <h1>宝可梦贪食蛇</h1>
+            <div class="pikachu-icon">⚡</div>
+            <div class="subtitle">皮卡丘蛇头 × 精灵球食物</div>
+            <button id="startBtn" class="btn">开始游戏</button>
+            <div class="controls">
+                <div class="control-btn up">↑</div>
+                <div class="control-btn left">←</div>
+                <div class="control-btn right">→</div>
+                <div class="control-btn down">↓</div>
+            </div>
+            <div class="instructions">
+                <p>📱 手机：点击方向按钮</p>
+                <p>💻 电脑：使用方向键</p>
+                <p>🎯 收集精灵球获得分数！</p>
+            </div>
+        </div>
+        <div id="gameOverScreen" class="ui-overlay hidden">
+            <div class="game-over">游戏结束！</div>
+            <div class="score">得分: <span id="finalScore">0</span></div>
+            <button id="restartBtn" class="btn">重新开始</button>
+            <div class="instructions">
+                <p>🏆 最高分记录在本地存储</p>
+                <p>🔄 刷新页面可重置记录</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const finalScore = document.getElementById('finalScore');
+        const highScoreElement = document.getElementById('highScore');
+        
+        // Control buttons
+        const upBtn = document.querySelector('.up');
+        const downBtn = document.querySelector('.down');
+        const leftBtn = document.querySelector('.left');
+        const rightBtn = document.querySelector('.right');
+        
+        let snake = [];
+        let food = {};
+        let direction = 'right';
+        let nextDirection = 'right';
+        let score = 0;
+        let highScore = localStorage.getItem('pokemonSnakeHighScore') || 0;
+        let gameSpeed = 150;
+        let gameRunning = false;
+        let gameLoop;
+        let animationFrameId;
+        
+        // Initialize canvas size
+        function initCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        
+        // Initialize game
+        function initGame() {
+            // Reset game state
+            snake = [
+                {x: 5, y: 10},
+                {x: 4, y: 10},
+                {x: 3, y: 10}
+            ];
+            generateFood();
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            gameSpeed = 150;
+            gameRunning = true;
+            
+            // Hide start screen, show canvas
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            // Start game loop
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, gameSpeed);
+        }
+        
+        // Generate food at random position
+        function generateFood() {
+            const gridSize = 20;
+            const maxX = Math.floor(canvas.width / gridSize) - 1;
+            const maxY = Math.floor(canvas.height / gridSize) - 1;
+            
+            let newFood;
+            let overlapping;
+            
+            do {
+                overlapping = false;
+                newFood = {
+                    x: Math.floor(Math.random() * maxX),
+                    y: Math.floor(Math.random() * maxY)
+                };
+                
+                // Check if food overlaps with snake
+                for (let segment of snake) {
+                    if (segment.x === newFood.x && segment.y === newFood.y) {
+                        overlapping = true;
+                        break;
+                    }
+                }
+            } while (overlapping);
+            
+            food = newFood;
+        }
+        
+        // Update game state
+        function update() {
+            if (!gameRunning) return;
+            
+            // Update direction
+            direction = nextDirection;
+            
+            // Calculate new head position
+            const head = {...snake[0]};
+            switch (direction) {
+                case 'up': head.y--; break;
+                case 'down': head.y++; break;
+                case 'left': head.x--; break;
+                case 'right': head.x++; break;
+            }
+            
+            // Check collision with walls
+            const gridSize = 20;
+            const maxX = Math.floor(canvas.width / gridSize);
+            const maxY = Math.floor(canvas.height / gridSize);
+            
+            if (head.x < 0 || head.x >= maxX || head.y < 0 || head.y >= maxY) {
+                gameOver();
+                return;
+            }
+            
+            // Check collision with self
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Add new head
+            snake.unshift(head);
+            
+            // Check if food is eaten
+            if (head.x === food.x && head.y === food.y) {
+                // Increase score
+                score += 10;
+                // Generate new food
+                generateFood();
+                // Increase speed slightly
+                if (gameSpeed > 80) {
+                    gameSpeed -= 2;
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(update, gameSpeed);
+                }
+            } else {
+                // Remove tail if no food eaten
+                snake.pop();
+            }
+        }
+        
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const gridSize = 20;
+            
+            // Draw grid background
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw snake
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Draw Pikachu head (yellow with red cheeks)
+                    ctx.fillStyle = '#FFD700'; // Yellow
+                    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+                    
+                    // Draw red cheeks
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(segment.x * gridSize + 3, segment.y * gridSize + 5, 4, 4);
+                    ctx.fillRect(segment.x * gridSize + gridSize - 7, segment.y * gridSize + 5, 4, 4);
+                    
+                    // Draw eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(segment.x * gridSize + 6, segment.y * gridSize + 8, 3, 3);
+                    ctx.fillRect(segment.x * gridSize + gridSize - 9, segment.y * gridSize + 8, 3, 3);
+                    
+                    // Draw lightning bolt
+                    ctx.fillStyle = '#FFCB05';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillText('⚡', segment.x * gridSize + 5, segment.y * gridSize + 15);
+                } else {
+                    // Draw snake body (yellow gradient)
+                    const intensity = 200 - Math.min(50, index * 5);
+                    ctx.fillStyle = `rgb(${intensity}, ${intensity + 55}, 0)`;
+                    ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
+                    
+                    // Add shine effect
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(segment.x * gridSize + 2, segment.y * gridSize + 2, 4, 4);
+                }
+            });
+            
+            // Draw food (Pokeball)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+            
+            // Pokeball design
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize/2);
+            
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(food.x * gridSize, food.y * gridSize + gridSize/2);
+            ctx.lineTo(food.x * gridSize + gridSize, food.y * gridSize + gridSize/2);
+            ctx.stroke();
+            
+            // Draw center dot
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw score
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(`得分: ${score}`, 10, 20);
+            
+            // Draw high score
+            ctx.fillText(`最高分: ${highScore}`, 10, 40);
+        }
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            finalScore.textContent = score;
+            
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('pokemonSnakeHighScore', highScore);
+            }
+            
+            gameOverScreen.classList.remove('hidden');
+        }
+        
+        // Handle keyboard input
+        function handleKeydown(e) {
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    break;
+                case ' ':
+                    // Space bar to restart
+                    if (!gameRunning) {
+                        initGame();
+                    }
+                    break;
+            }
+        }
+        
+        // Handle touch controls
+        function setupControls() {
+            upBtn.addEventListener('click', () => {
+                if (direction !== 'down') nextDirection = 'up';
+            });
+            
+            downBtn.addEventListener('click', () => {
+                if (direction !== 'up') nextDirection = 'down';
+            });
+            
+            leftBtn.addEventListener('click', () => {
+                if (direction !== 'right') nextDirection = 'left';
+            });
+            
+            rightBtn.addEventListener('click', () => {
+                if (direction !== 'left') nextDirection = 'right';
+            });
+        }
+        
+        // Game loop using requestAnimationFrame for smoother animation
+        function gameLoopFunction() {
+            if (gameRunning) {
+                update();
+                draw();
+            }
+            animationFrameId = requestAnimationFrame(gameLoopFunction);
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            initCanvas();
+            setupControls();
+            startBtn.addEventListener('click', initGame);
+            restartBtn.addEventListener('click', initGame);
+            window.addEventListener('keydown', handleKeydown);
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                initCanvas();
+                if (gameRunning) {
+                    draw();
+                }
+            });
+            
+            // Start the game loop
+            animationFrameId = requestAnimationFrame(gameLoopFunction);
+        });
+        
+        // PWA installation prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+        
+        // Add install button event listener
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(console.error);
+            });
+        }
+    </script>
 </body>
 </html>
