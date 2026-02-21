@@ -248,7 +248,7 @@
         let nextDirection = 'right';
         let score = 0;
         let highScore = localStorage.getItem('pokemonSnakeHighScore') || 0;
-        let gameSpeed = 150;
+        let gameSpeed = 50;
         let gameRunning = false;
         let gameLoop;
         let animationFrameId;
@@ -272,7 +272,7 @@
             direction = 'right';
             nextDirection = 'right';
             score = 0;
-            gameSpeed = 150;
+            gameSpeed = 50;
             gameRunning = true;
             
             // Hide start screen, show canvas
@@ -356,7 +356,7 @@
                 // Generate new food
                 generateFood();
                 // Increase speed slightly
-                if (gameSpeed > 80) {
+                if (gameSpeed > 30) {
                     gameSpeed -= 2;
                     clearInterval(gameLoop);
                     gameLoop = setInterval(update, gameSpeed);
